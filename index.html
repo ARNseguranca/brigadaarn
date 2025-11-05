@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Brigada — Administrador</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f6f9;
+    --panel:#ffffff;
+    --muted:#6b7280;
+    --primary:#0f6fff;
+    --danger:#e04848;
+    --radius:12px;
+    --gap:16px;
+    --maxw:1200px;
+    --shadow: 0 8px 28px rgba(16,24,40,0.06);
+    --photo-size:80px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+    background:linear-gradient(180deg,#f7fbff 0%,var(--bg) 100%);
+    color:#0f1724;
+    display:flex;
+    justify-content:center;
+    padding:28px;
+  }
+  .app{width:100%;max-width:var(--maxw)}
+  header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:56px;height:56px;border-radius:12px;display:inline-grid;place-items:center;background:linear-gradient(135deg,var(--primary),#0b5ed7);color:white;font-weight:700;font-size:18px;box-shadow:0 8px 20px rgba(11,95,200,0.08)}
+  h1{margin:0;font-size:1.15rem}
+  .subtitle{margin:0;color:var(--muted);font-size:0.95rem}
+  .controls{display:flex;gap:10px;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:0;background:var(--primary);color:white;cursor:pointer;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--primary);border:1px solid rgba(15,111,255,0.12)}
+  .small-muted{color:var(--muted);font-size:0.9rem}
+  .layout{display:grid;grid-template-columns:360px 1fr;gap:var(--gap)}
+  @media (max-width:980px){ .layout{grid-template-columns:1fr} }
+  .panel{background:var(--panel);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);overflow:hidden}
+  label{display:block;margin-top:12px;font-size:0.95rem;color:#111}
+  input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid #e9eef6;margin-top:6px;font-size:0.95rem;background:transparent;outline:none}
+  textarea{min-height:88px;resize:vertical}
+  .form-row{display:flex;gap:10px}
+  .col{flex:1}
+  /* photo / avatar */
+  .photo-preview{display:flex;gap:10px;align-items:center;margin-top:8px}
+  #photoImg{width:var(--photo-size);height:var(--photo-size);border-radius:50%;object-fit:cover;border:2px solid rgba(0,0,0,0.06);display:block}
+  .thumb{width:56px;height:56px;border-radius:50%;object-fit:cover;display:block;border:2px solid rgba(0,0,0,0.04)}
+  .avatar{width:56px;height:56px;border-radius:50%;display:inline-grid;place-items:center;margin-right:10px;color:white;background:linear-gradient(135deg,#6c8cff,#4b6bff);font-weight:700}
+  .img-wrap{width:56px;height:56px;border-radius:50%;overflow:hidden;display:inline-block}
+  .img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .search{display:flex;gap:10px;align-items:center;background:var(--panel);border-radius:12px;padding:8px 10px;border:1px solid #e9eef6;min-width:260px}
+  .search input{border:0;padding:8px;outline:none;background:transparent;font-size:0.95rem;width:240px}
+  .filter{background:transparent;border:0;color:var(--muted);font-size:0.95rem;padding:8px 10px;border-radius:8px;border:1px solid #eef2f7}
+  .card{background:var(--panel);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);overflow:auto}
+  table{width:100%;border-collapse:collapse;font-size:0.95rem}
+  thead th{text-align:left;padding:12px 10px;font-weight:600;color:#253045;border-bottom:1px solid #f0f4fb;background:linear-gradient(180deg, rgba(255,255,255,0.6), transparent)}
+  tbody td{padding:12px 10px;border-bottom:1px solid #f6f9ff;vertical-align:middle}
+  tbody tr:hover{background:linear-gradient(90deg, rgba(15,111,255,0.03), transparent)}
+  .actions{display:flex;gap:8px;justify-content:flex-end}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+  .modal{background:var(--panel);padding:18px;border-radius:12px;max-width:460px;width:100%;box-shadow:0 18px 40px rgba(12,22,60,0.18)}
+  .toast{position:fixed;right:20px;bottom:20px;background:var(--primary);color:white;padding:10px 14px;border-radius:10px;display:none;box-shadow:0 12px 30px rgba(11,95,200,0.12);z-index:80}
+  .toast.error{background:var(--danger)}
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">BR</div>
+        <div>
+          <h1>Brigada — Painel Administrador</h1>
+          <p class="subtitle">Gerencie brigadistas — adicione, edite, exclua. Integração Google Sheets.</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="refreshBtn" class="btn ghost">Atualizar</button>
+        <button id="exportCsv" class="btn ghost">Exportar CSV</button>
+        <div class="small-muted" id="connectedInfo">Conexão: aguardando...</div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- FORM -->
+      <aside class="panel" aria-labelledby="formTitle">
+        <h2 id="formTitle">Adicionar / Editar Brigadista</h2>
+        <form id="form" onsubmit="return false" autocomplete="off">
+          <input type="hidden" id="editingId" value="">
+          <label>Nome
+            <input id="nome" type="text" maxlength="120" placeholder="Nome completo" required>
+          </label>
+
+          <div class="form-row">
+            <div class="col">
+              <label>Cargo
+                <input id="cargo" type="text" maxlength="60" placeholder="Ex: Brigadista / Líder">
+              </label>
+            </div>
+            <div class="col">
+              <label>Telefone
+                <input id="telefone" type="text" maxlength="22" placeholder="(99) 9 9999-9999">
+              </label>
+            </div>
+          </div>
+
+          <label>E-mail
+            <input id="email" type="email" placeholder="email@exemplo.com">
+          </label>
+
+          <label>Plantão
+            <select id="plantao">
+              <option value="">-- selecione --</option>
+              <option value="Alfa">Alfa</option>
+              <option value="Bravo">Bravo</option>
+              <option value="Charlie">Charlie</option>
+              <option value="Delta">Delta</option>
+            </select>
+          </label>
+
+          <label>Observações
+            <textarea id="observacoes" placeholder="Turno, restrições, observações"></textarea>
+          </label>
+
+          <label>Foto do colaborador
+            <input id="photo" type="file" accept="image/*">
+            <div class="small-muted">Recomendado JPG/PNG até ~3MB.</div>
+          </label>
+
+          <div class="photo-preview" id="photoPreview" style="display:none">
+            <img id="photoImg" src="" alt="Preview foto do colaborador">
+            <div class="small-muted" id="photoName"></div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:12px;align-items:center">
+            <button id="saveBtn" class="btn">Salvar</button>
+            <button id="clearBtn" class="btn ghost" type="button">Limpar</button>
+          </div>
+        </form>
+
+        <p class="small-muted" style="margin-top:12px">Dica: clique em um registro na tabela para carregar os dados no formulário.</p>
+      </aside>
+
+      <!-- TABLE -->
+      <main class="panel">
+        <div class="toolbar">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div class="search" role="search" aria-label="Pesquisar brigadistas">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="opacity:0.7"><path d="M21 21l-4.35-4.35" stroke="#374151" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="#374151" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <input id="search" placeholder="Pesquisar por nome, cargo, telefone" aria-label="Pesquisar">
+            </div>
+
+            <select id="filterPlantao" class="filter" aria-label="Filtrar por plantão">
+              <option value="">Filtrar por plantão</option>
+              <option value="Alfa">Alfa</option>
+              <option value="Bravo">Bravo</option>
+              <option value="Charlie">Charlie</option>
+              <option value="Delta">Delta</option>
+            </select>
+
+            <select id="filterCargo" class="filter" aria-label="Filtrar por cargo">
+              <option value="">Filtrar por cargo</option>
+            </select>
+
+            <div class="small-muted" id="countInfo"></div>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center">
+            <button id="prevPage" class="btn ghost" title="Página anterior">«</button>
+            <div class="small-muted" id="pageInfo">Página 1</div>
+            <button id="nextPage" class="btn ghost" title="Próxima página">»</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <table id="table" aria-live="polite">
+            <thead>
+              <tr>
+                <th>Brigadista</th>
+                <th>Cargo</th>
+                <th>Telefone</th>
+                <th>E-mail</th>
+                <th>Plantão</th>
+                <th>Foto</th>
+                <th style="width:140px;text-align:right">Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- modal -->
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document">
+      <h3 id="modalTitle">Confirmar</h3>
+      <p id="modalText">Você tem certeza?</p>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button id="modalCancel" class="btn ghost">Cancelar</button>
+        <button id="modalConfirm" class="btn" style="background:var(--danger);border:0;color:white">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ===== CONFIG - substitua a URL ===== */
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbylRxoBAFsjTcNyS5qtP-hsXLDXh4eoPxXJ5csLLHEFINw7zVrpuomsjDeEI0rPnII4/exec'; // <-- coloque a URL do Web App aqui
+const API_TOKEN = ''; // opcional
+const PAGE_SIZE = 10;
+
+/* ===== HELPERS ===== */
+const $ = s => document.querySelector(s);
+function showToast(msg, isError=false, ms=3500){ const t = $('#toast'); t.textContent = msg; t.className = 'toast' + (isError ? ' error' : ''); t.style.display = 'block'; setTimeout(()=> t.style.display='none', ms); }
+function escapeHtml(s){ if(!s && s!==0) return ''; return String(s).replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+function debounce(fn, wait=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
+async function fileToDataURL(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=()=>rej(fr.error); fr.readAsDataURL(file); }); }
+
+/* Converte várias formas de links do Drive em link direto para <img src=...> */
+function driveToDirectImageUrl(url){
+  if(!url) return '';
+  try{
+    // se já é base64 ou já está no formato uc?export=view, retorna direto
+    if(url.startsWith('data:')) return url;
+    if(url.includes('uc?export=view')) return url;
+
+    // id in querystring ?id=FILEID
+    let m = url.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+    if(m && m[1]) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+
+    // /d/FILEID/
+    m = url.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+    if(m && m[1]) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+
+    // file/d/FILEID/view...
+    m = url.match(/file\/d\/([a-zA-Z0-9_-]{10,})/);
+    if(m && m[1]) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+
+    // fallback: retorna original (pode falhar se não for compartilhado corretamente)
+    return url;
+  } catch(e){ return url; }
+}
+
+/* ===== STATE ===== */
+let RAW = [], FILTERED = [], currentPage = 1;
+let pendingPhotoBase64 = null;
+
+/* ===== API ===== */
+async function apiGet(){
+  const url = new URL(BASE_URL);
+  url.searchParams.set('action','list');
+  const r = await fetch(url.toString(), {cache:'no-store'});
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  return await r.json();
+}
+async function apiPost(payload){
+  if(API_TOKEN) payload.token = API_TOKEN;
+  const res = await fetch(BASE_URL, { method:'POST', body: JSON.stringify(payload) });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  return await res.json();
+}
+async function addPerson(data){ return apiPost({ action:'add', data }); }
+async function deletePerson(id){ return apiPost({ action:'delete', id }); }
+async function editPerson(id, data){ return apiPost({ action:'edit', id, data }); }
+
+/* ===== RENDER ===== */
+function avatarText(name){ if(!name) return ''; return name.split(/\s+/).slice(0,2).map(p=>p[0].toUpperCase()).join(''); }
+
+function populateCargoFilter(){
+  const sel = $('#filterCargo'); sel.innerHTML = '<option value="">Filtrar por cargo</option>';
+  const cargos = Array.from(new Set(RAW.map(r=> (r.cargo||'').trim()).filter(Boolean))).sort();
+  cargos.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+}
+
+
+function renderTable(list){
+  const tbody = $('#table tbody'); tbody.innerHTML = '';
+  if(!list.length){ tbody.innerHTML = '<tr><td colspan="7" class="small-muted">Nenhum registro encontrado</td></tr>'; $('#countInfo').textContent='0 registros'; $('#pageInfo').textContent='Página 1'; return; }
+  const start = (currentPage-1)*PAGE_SIZE; const pageItems = list.slice(start, start+PAGE_SIZE);
+  pageItems.forEach(item=>{
+    const tr = document.createElement('tr');
+    const raw = item.photo || '';
+    const photoUrl = driveToDirectImageUrl(raw);
+    const photoCell = photoUrl
+      ? `<div class="img-wrap"><img class="thumb" src="${escapeHtml(photoUrl)}" alt="foto de ${escapeHtml(item.nome)}"></div>`
+      : `<div class="avatar">${escapeHtml(avatarText(item.nome))}</div>`;
+    tr.innerHTML = `
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${photoCell}
+          <div>
+            <div style="font-weight:600">${escapeHtml(item.nome)}</div>
+            <div class="small-muted">${escapeHtml(item.cargo)}</div>
+          </div>
+        </div>
+      </td>
+      <td>${escapeHtml(item.cargo)}</td>
+      <td><a href="tel:${escapeHtml(String(item.telefone||'').replace(/[^+0-9]/g,''))}">${escapeHtml(item.telefone||'')}</a></td>
+      <td>${item.email ? `<a href="mailto:${escapeHtml(item.email)}">${escapeHtml(item.email)}</a>` : ''}</td>
+      <td>${escapeHtml(item.plantao||'')}</td>
+      <td style="text-align:center">${item.photo ? `<a href="${escapeHtml(item.photo)}" target="_blank" rel="noopener">ver</a>` : ''}</td>
+      <td style="text-align:right" class="actions">
+        <button class="btn ghost editBtn" data-id="${item.id}">Editar</button>
+        <button class="btn deleteBtn" data-id="${item.id}" style="background:var(--danger);color:white">Excluir</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  $('#countInfo').textContent = `${list.length} registros`;
+  $('#pageInfo').textContent = `Página ${currentPage} de ${Math.max(1,Math.ceil(list.length/PAGE_SIZE))}`;
+}
+
+/* ===== LOAD ===== */
+async function load(){
+  try{
+    $('#connectedInfo').textContent = 'Carregando...';
+    const res = await apiGet();
+    RAW = (res && res.data) ? res.data.map(r=>({
+      id:String(r.id||''), nome:String(r.nome||''), cargo:String(r.cargo||''), telefone:String(r.telefone||''), email:String(r.email||''), plantao:String(r.plantao||''), observacoes:String(r.observacoes||''), photo:String(r.photo||'')
+    })) : [];
+    FILTERED = RAW.slice();
+    currentPage = 1; populateCargoFilter(); renderTable(FILTERED);
+    $('#connectedInfo').textContent = 'Conectado';
+  } catch(err){
+    $('#connectedInfo').textContent = 'Erro';
+    console.error(err);
+    showToast('Erro ao carregar: ' + (err.message || err), true);
+  }
+}
+
+/* ===== EVENTS ===== */
+document.addEventListener('DOMContentLoaded', ()=>{
+
+  // photo input preview + toBase64
+  $('#photo').addEventListener('change', async (ev)=>{
+    const f = ev.target.files && ev.target.files[0];
+    if(!f){ pendingPhotoBase64 = null; $('#photoPreview').style.display='none'; return; }
+    if(f.size > 4*1024*1024){ showToast('Arquivo muito grande (max ~4MB)', true); ev.target.value=''; return; }
+    try{
+      const dataUrl = await fileToDataURL(f);
+      pendingPhotoBase64 = dataUrl;
+      $('#photoImg').src = dataUrl;
+      $('#photoName').textContent = f.name;
+      $('#photoPreview').style.display = 'flex';
+    } catch(e){ console.error(e); showToast('Erro ao ler imagem', true); }
+  });
+
+  // save
+  $('#saveBtn').addEventListener('click', async ()=>{
+    const id = $('#editingId').value;
+    const payload = {
+      nome: $('#nome').value.trim(),
+      cargo: $('#cargo').value.trim(),
+      telefone: $('#telefone').value.trim(),
+      email: $('#email').value.trim(),
+      plantao: $('#plantao').value || '',
+      observacoes: $('#observacoes').value.trim()
+    };
+    if(!payload.nome){ showToast('Preencha o nome', true); $('#nome').focus(); return; }
+    if(payload.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payload.email)){ showToast('E-mail inválido', true); $('#email').focus(); return; }
+
+    // se houver imagem anexada, envie tanto photoBase64 quanto photo (data URL)
+    if(pendingPhotoBase64){
+      payload.photoBase64 = pendingPhotoBase64;
+      payload.photo = pendingPhotoBase64;
+    }
+
+    $('#saveBtn').disabled = true; $('#saveBtn').textContent = id ? 'Salvando...' : 'Adicionando...';
+    try{
+      let res;
+      if(id) res = await editPerson(id, payload); else res = await addPerson(payload);
+      if(res && res.status === 'ok'){ showToast(id ? 'Atualizado com sucesso' : 'Adicionado com sucesso'); $('#form').reset(); $('#editingId').value=''; pendingPhotoBase64=null; $('#photoPreview').style.display='none'; await load(); }
+      else throw new Error(res && (res.error || JSON.stringify(res)) || 'Resposta inválida');
+    } catch(err){ console.error('save error', err); showToast('Erro: ' + (err.message||err), true); }
+    finally{ $('#saveBtn').disabled = false; $('#saveBtn').textContent = 'Salvar'; }
+  });
+
+  // clear
+  $('#clearBtn').addEventListener('click', ()=>{ $('#form').reset(); $('#editingId').value=''; pendingPhotoBase64=null; $('#photoPreview').style.display='none'; });
+
+  // table actions (delegation)
+  $('#table').addEventListener('click', (ev)=>{
+    const editBtn = ev.target.closest('.editBtn');
+    const delBtn = ev.target.closest('.deleteBtn');
+    if(editBtn){
+      const id = editBtn.dataset.id; const item = RAW.find(x=>x.id===id);
+      if(!item){ showToast('Registro não encontrado', true); return; }
+      $('#editingId').value = item.id; $('#nome').value=item.nome; $('#cargo').value=item.cargo; $('#telefone').value=item.telefone; $('#email').value=item.email; $('#plantao').value=item.plantao||''; $('#observacoes').value=item.observacoes||'';
+      if(item.photo){ $('#photoImg').src = driveToDirectImageUrl(item.photo); $('#photoName').textContent = 'Foto existente'; $('#photoPreview').style.display='flex'; } else $('#photoPreview').style.display='none';
+      window.scrollTo({top:0,behavior:'smooth'});
+      return;
+    }
+    if(delBtn){
+      const id = delBtn.dataset.id; const item = RAW.find(x=>x.id===id);
+      if(!item){ showToast('Registro não encontrado', true); return; }
+      $('#modalText').textContent = `Deseja excluir “${item.nome}” (ID ${item.id})? Esta ação não poderá ser desfeita.`;
+      $('#modalBackdrop').style.display = 'flex';
+      $('#modalConfirm').onclick = async ()=>{
+        $('#modalBackdrop').style.display='none';
+        try{
+          const r = await deletePerson(id);
+          if(r && r.status === 'ok'){ showToast('Excluído'); await load(); } else throw new Error(r && (r.error || JSON.stringify(r)) || 'Resposta inválida');
+        } catch(err){ console.error('delete error', err); showToast('Erro ao excluir: ' + (err.message||err), true); }
+      };
+    }
+  });
+
+  // modal cancel
+  $('#modalCancel').addEventListener('click', ()=>{ $('#modalBackdrop').style.display='none'; });
+
+  // search & filters
+  $('#search').addEventListener('input', debounce(function(){
+    const q = this.value.trim().toLowerCase(); const plant = $('#filterPlantao').value; const cargo = $('#filterCargo').value;
+    FILTERED = RAW.filter(i => {
+      const matchQ = !q || (i.nome||'').toLowerCase().includes(q) || (i.cargo||'').toLowerCase().includes(q) || (i.telefone||'').toLowerCase().includes(q);
+      const matchPlant = !plant || (i.plantao||'') === plant;
+      const matchCargo = !cargo || (i.cargo||'') === cargo;
+      return matchQ && matchPlant && matchCargo;
+    });
+    currentPage = 1; renderTable(FILTERED);
+  }, 250));
+
+  $('#filterPlantao').addEventListener('change', ()=> $('#search').dispatchEvent(new Event('input')));
+  $('#filterCargo').addEventListener('change', ()=> $('#search').dispatchEvent(new Event('input')));
+
+  // pagination buttons
+  $('#prevPage').addEventListener('click', ()=> { if(currentPage>1){ currentPage--; renderTable(FILTERED); }});
+  $('#nextPage').addEventListener('click', ()=> { const max = Math.max(1,Math.ceil(FILTERED.length/PAGE_SIZE)); if(currentPage<max){ currentPage++; renderTable(FILTERED); }});
+
+  // refresh
+  $('#refreshBtn').addEventListener('click', load);
+
+  // export csv
+  $('#exportCsv').addEventListener('click', ()=>{
+    const rows = FILTERED.map(r=> [r.id, r.nome, r.cargo, r.telefone, r.email, r.plantao, r.observacoes, r.photo]);
+    const header = ['id','nome','cargo','telefone','email','plantao','observacoes','photo'];
+    const csv = [header.join(';'), ...rows.map(r=> r.map(c=> '"'+String(c||'').replace(/"/g,'""') + '"').join(';'))].join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'}); const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='brigada.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    showToast('CSV gerado');
+  });
+
+  // init
+  load();
+}); // DOMContentLoaded
+</script>
+</body>
+</html>
