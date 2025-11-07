@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Brigada — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #f4f7fb;
+    --panel: #ffffff;
+    --muted: #6b7280;
+    --text: #102030;
+    --primary: #0b7d70;
+    --primary-600: #0a6b5f;
+    --danger: #e53935;
+    --card-radius: 12px;
+    --gap: 12px;
+    --shadow: 0 8px 28px rgba(16,24,40,0.06);
+    --glass: rgba(11,13,16,0.03);
+    --maxw: 1100px;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    background:linear-gradient(180deg,#f7fbff 0%,var(--bg) 100%);
+    color:var(--text);
+    padding:16px;
+    display:flex;
+    justify-content:center;
+  }
+
+  .app {
+    width:100%;
+    max-width:var(--maxw);
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+
+  /* ===== Login ===== */
+  #loginPage{
+    min-height:72vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #loginBox{
+    width:100%;
+    max-width:420px;
+    background:var(--panel);
+    padding:28px;
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--glass);
+  }
+  #loginBox .brand{
+    display:flex;gap:12px;align-items:center;margin-bottom:14px;
+  }
+  #loginBox .brand img{width:64px;height:64px;border-radius:10px;object-fit:cover}
+  #loginBox h2{margin:0;font-size:1.15rem;color:var(--primary-600)}
+  #loginBox p{margin:6px 0 14px;color:var(--muted);font-size:0.94rem}
+  .field{margin-bottom:10px}
+  input[type="text"], input[type="password"]{
+    width:100%;padding:10px 12px;border-radius:10px;border:1px solid #e6eef6;font-size:15px;background:#fbfdff;
+  }
+  .row-between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;border:0;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:700;
+  }
+  .btn.primary{background:var(--primary);color:white}
+  .btn.ghost{background:#f5f7fb;border:1px solid #e7eef7;color:var(--text)}
+  .small-muted{color:var(--muted);font-size:0.9rem}
+
+  #loginError{color:var(--danger);font-size:0.95rem;margin-top:8px;display:none}
+
+  /* ===== Header / Topbar ===== */
+  header.topbar{
+    background:linear-gradient(180deg, rgba(11,125,112,0.06), rgba(11,125,112,0.03));
+    padding:12px 14px;border-radius:12px;border:1px solid var(--glass);display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)
+  }
+  header .title{display:flex;gap:12px;align-items:center}
+  header img.logo{width:48px;height:48px;border-radius:10px;object-fit:cover}
+  header h1{margin:0;font-size:1rem}
+  header .actions{margin-left:auto;display:flex;gap:10px;align-items:center}
+
+  /* ===== Main layout ===== */
+  main{display:flex;gap:16px;flex-direction:column;padding:0}
+  .panel{
+    background:var(--panel);border-radius:var(--card-radius);padding:12px;border:1px solid var(--glass);box-shadow:var(--shadow)
+  }
+
+  /* Form */
+  form#form{display:grid;gap:10px}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:720px){ .form-row{grid-template-columns:1fr} }
+  input, textarea, select{width:100%;padding:10px;border-radius:10px;border:1px solid #e8eef6;background:#fbfdff;font-size:14px}
+  textarea{min-height:80px;resize:vertical}
+  #photoPreview{display:flex;gap:10px;align-items:center;margin-top:6px}
+  img.thumb{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--primary)}
+
+  .form-actions{display:flex;gap:10px;justify-content:flex-end}
+  .form-actions .btn{padding:10px 14px;border-radius:10px}
+
+  /* Toolbar: search + page controls */
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .search{flex:1;display:flex;gap:8px;align-items:center;background:#f6fbfb;padding:8px;border-radius:10px;border:1px solid #eef6f6}
+  .search input{border:0;background:transparent;outline:none;font-size:14px;width:100%}
+  .toolbar .select{padding:8px;border-radius:8px;border:1px solid #eef6f6;background:white}
+
+  /* Table / Cards responsive */
+  .list-wrap{display:block}
+  table{width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #f0f3f6;vertical-align:middle}
+  thead th{background:#fbfdff;font-weight:700;color:var(--muted)}
+  tr:hover td{background:#fbfcfd}
+
+  /* Responsive cards on small screens */
+  @media (max-width:860px){
+    table{display:none}
+    .cards{display:grid;grid-template-columns:1fr;gap:12px}
+    .card{display:flex;gap:12px;background:#fff;padding:12px;border-radius:10px;border:1px solid #eef6f6;align-items:center}
+  }
+  @media (min-width:861px){
+    .cards{display:none}
+  }
+
+  .card .meta{flex:1;min-width:0}
+  .card h3{margin:0;font-size:1rem}
+  .card p{margin:4px 0;color:var(--muted);font-size:0.9rem}
+  .card .actions{display:flex;gap:8px;align-items:center}
+
+  /* toast */
+  .toast{position:fixed;right:18px;bottom:18px;background:#111827;color:white;padding:10px 14px;border-radius:10px;display:none;z-index:9999;box-shadow:0 8px 30px rgba(2,6,23,0.3)}
+
+  /* modal preview / confirm */
+  .modal-back{position:fixed;inset:0;background:rgba(2,6,23,0.5);display:none;align-items:center;justify-content:center;z-index:9998}
+  .modal{background:white;padding:14px;border-radius:12px;max-width:420px;width:92%;box-shadow:var(--shadow)}
+  .modal h3{margin:0 0 8px}
+  .modal .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+
+  /* small helpers */
+  .muted{color:var(--muted)}
+  .pill{display:inline-block;padding:6px 8px;border-radius:999px;background:#f4f8f7;border:1px solid #eef6f6;font-weight:700;color:var(--primary)}
+  .icon-btn{border:0;background:transparent;cursor:pointer;padding:8px;border-radius:8px}
+</style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- LOGIN -->
+    <section id="loginPage" aria-labelledby="loginTitle">
+      <div id="loginBox" role="dialog" aria-modal="true" aria-label="Login">
+        <div class="brand">
+          <img src="image (3).png" alt="Logo Nascentes">
+          <div>
+            <h2 id="loginTitle">Acesso Administrativo</h2>
+            <p class="small-muted">Área restrita — somente usuários autorizados</p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="small-muted" for="user">Usuário</label>
+          <input id="user" type="text" placeholder="admin">
+        </div>
+        <div class="field">
+          <label class="small-muted" for="pass">Senha</label>
+          <div class="row-between">
+            <input id="pass" type="password" placeholder="••••••••">
+            <button id="togglePass" class="btn ghost" type="button" aria-label="Mostrar senha">👁</button>
+          </div>
+        </div>
+
+        <div class="row-between" style="margin-top:6px">
+          <button id="loginBtn" class="btn primary">Entrar</button>
+          <button id="forgotBtn" class="btn ghost" type="button">Esqueci</button>
+        </div>
+
+        <div id="loginError" role="alert">Usuário ou senha incorretos.</div>
+      </div>
+    </section>
+
+    <!-- APP -->
+    <section id="app" style="display:none" aria-live="polite">
+      <header class="topbar" role="banner">
+        <div class="title">
+          <img src="image (3).png" class="logo" alt="Logo">
+          <div>
+            <h1>Cadastro — Brigada de Incêndio</h1>
+            <div class="small-muted">Gerencie brigadistas, fotos e plantões</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="refreshBtn" class="btn ghost" title="Atualizar">🔄 Atualizar</button>
+          <button id="logoutBtn" class="btn" style="background:white;color:var(--primary);border-radius:10px">Sair</button>
+        </div>
+      </header>
+
+      <main>
+        <!-- form -->
+        <div class="panel" aria-labelledby="formTitle">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div>
+              <strong id="formTitle">Adicionar / Editar Brigadista</strong>
+              <div class="small-muted">Preencha os dados e clique em Salvar</div>
+            </div>
+            <div class="muted">Registros: <span id="countInfo">—</span></div>
+          </div>
+
+          <form id="form" autocomplete="off">
+            <input type="hidden" id="editingId">
+            <div class="form-row">
+              <div>
+                <label class="small-muted" for="nome">Nome</label>
+                <input id="nome" placeholder="Nome completo" required>
+              </div>
+              <div>
+                <label class="small-muted" for="cargo">Cargo / Função</label>
+                <input id="cargo" placeholder="Ex: Brigadista / Líder">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div>
+                <label class="small-muted" for="telefone">Telefone</label>
+                <input id="telefone" placeholder="+55 11 91234-5678">
+              </div>
+              <div>
+                <label class="small-muted" for="email">Email</label>
+                <input id="email" placeholder="nome@exemplo.com">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div>
+                <label class="small-muted" for="plantao">Plantão</label>
+                <select id="plantao" required>
+                  <option value="">Selecione</option>
+                  <option value="ALFA">ALFA</option>
+                  <option value="BRAVO">BRAVO</option>
+                  <option value="CHARLIE">CHARLIE</option>
+                  <option value="DELTA">DELTA</option>
+                  <option value="COORDENADOR(A)">COORDENADOR(A) DA BRIGADA</option>
+                   <option value="SUBCOORDENADOR(A)">SUBCOORDENADOR(A) DA BRIGADA</option>
+                </select>
+              </div>
+              <div>
+                <label class="small-muted" for="photo">Foto (opcional)</label>
+                <input type="file" id="photo" accept="image/*">
+              </div>
+            </div>
+
+            <div>
+              <label class="small-muted" for="observacoes">Observações</label>
+              <textarea id="observacoes" placeholder="Observações, alergias, etc."></textarea>
+            </div>
+
+            <div id="photoPreview" style="display:none;align-items:center;gap:10px">
+              <img id="photoImg" class="thumb" src="" alt="Pré-visualização">
+              <div>
+                <div id="photoName" class="small-muted"></div>
+                <button id="removePhoto" type="button" class="btn ghost" style="margin-top:6px">Remover</button>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button id="saveBtn" type="button" class="btn primary">💾 Salvar</button>
+              <button id="clearBtn" type="button" class="btn ghost">🧹 Limpar</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- list + toolbar -->
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="toolbar">
+            <div class="search panel" style="display:flex;align-items:center;gap:8px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.35-4.35" stroke="#8aa6a2" stroke-width="1.4" stroke-linecap="round"></path><circle cx="11" cy="11" r="5" stroke="#8aa6a2" stroke-width="1.4"></circle></svg>
+              <input id="q" placeholder="Pesquisar por nome, cargo, telefone, plantão">
+              <button id="clearQ" class="icon-btn" title="Limpar pesquisa">✖</button>
+            </div>
+
+            <select id="pageSize" class="select" aria-label="Tamanho da página">
+              <option value="8">8 / página</option>
+              <option value="12" selected>12 / página</option>
+              <option value="20">20 / página</option>
+            </select>
+
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+              <div class="small-muted">Visualização</div>
+              <button id="viewTable" class="btn ghost" title="Tabela">📋</button>
+              <button id="viewCards" class="btn ghost" title="Cartões">🧾</button>
+            </div>
+          </div>
+
+          <div class="panel list-wrap">
+            <!-- table (desktop) -->
+            <table id="table" role="table" aria-label="Lista de brigadistas">
+              <thead>
+                <tr><th>Nome</th><th>Cargo</th><th>Telefone</th><th>Email</th><th>Plantão</th><th>Foto</th><th>Ações</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+
+            <!-- cards (mobile) -->
+            <div class="cards" id="cards"></div>
+
+            <!-- pagination -->
+            <div style="display:flex;justify-content:center;margin-top:12px;gap:8px;align-items:center">
+              <button id="prevPage" class="btn ghost">◀ Anterior</button>
+              <div class="small-muted">Página <span id="pageNum">1</span></div>
+              <button id="nextPage" class="btn ghost">Próxima ▶</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- Modals -->
+    <div id="confirmModal" class="modal-back" role="dialog" aria-modal="true">
+      <div class="modal">
+        <h3>Confirmação</h3>
+        <div class="small-muted" id="confirmText">Deseja continuar?</div>
+        <div class="row">
+          <button id="confirmNo" class="btn ghost">Cancelar</button>
+          <button id="confirmYes" class="btn primary">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+/* =========================
+   Configurações e estado
+   ========================= */
+const LOGIN_USER = "admin";
+const LOGIN_PASS = "Nascentes2025";
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbxU6h3IRwFEBjdbAwcly28OeFFVquYYopuOjD4gSW70mJNRrUU18LZbrwTNLOnmiVA/exec';
+
+// define $ e $$ globalmente de forma segura (evita redeclaração)
+if (typeof window.$ === 'undefined') window.$ = (s) => document.querySelector(s);
+if (typeof window.$$ === 'undefined') window.$$ = (s) => Array.from(document.querySelectorAll(s));
+
+const $ = window.$;
+const $$ = window.$$;
+
+let RAW = [];          // dados crus do backend
+let FILTERED = [];     // aplicando pesquisa/filtro
+let currentPage = 1;
+let pageSize = Number($('#pageSize')?.value || 12);
+let pendingPhotoBase64 = null;
+let confirmResolve = null;
+
+/* =========================
+   Utilitários UI
+   ========================= */
+function toast(msg, ms = 2400) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._tm);
+  t._tm = setTimeout(()=> t.style.display='none', ms);
+}
+
+function showConfirm(text) {
+  $('#confirmText').textContent = text;
+  $('#confirmModal').style.display = 'flex';
+  return new Promise(res => { confirmResolve = res; });
+}
+$('#confirmNo').addEventListener('click', ()=> { $('#confirmModal').style.display='none'; confirmResolve(false); });
+$('#confirmYes').addEventListener('click', ()=> { $('#confirmModal').style.display='none'; confirmResolve(true); });
+
+/* =========================
+   Login
+   ========================= */
+$('#togglePass').addEventListener('click', ()=> {
+  const p = $('#pass');
+  p.type = p.type === 'password' ? 'text' : 'password';
+});
+$('#loginBtn').addEventListener('click', ()=> {
+  const u = $('#user').value.trim();
+  const p = $('#pass').value.trim();
+  if (u === LOGIN_USER && p === LOGIN_PASS) {
+    localStorage.setItem('authBrigada', 'ok');
+    $('#loginPage').style.display = 'none';
+    $('#app').style.display = 'block';
+    load();
+  } else {
+    $('#loginError').style.display = 'block';
+    setTimeout(()=> $('#loginError').style.display = 'none', 4500);
+  }
+});
+window.addEventListener('DOMContentLoaded', ()=> {
+  if (localStorage.getItem('authBrigada') === 'ok') {
+    $('#loginPage').style.display = 'none';
+    $('#app').style.display = 'block';
+    load();
+  }
+});
+$('#logoutBtn').addEventListener('click', ()=> {
+  localStorage.removeItem('authBrigada');
+  location.reload();
+});
+
+/* =========================
+   Helpers de dados (normalização de imagem)
+   ========================= */
+function normalizeItem(raw) {
+  // garante compatibilidade com vários nomes de campos de imagem
+  const photoField = raw.photoBase64 || raw.photobase64 || raw.photobase || raw.photo || raw.photo_base64 || raw.image || raw.foto || '';
+  let photo = '';
+  if (photoField && String(photoField).trim()) {
+    const rf = String(photoField).trim();
+    if (rf.startsWith('data:')) photo = rf;
+    else if (/^https?:\/\//i.test(rf) || rf.startsWith('/')) photo = rf;
+    else photo = 'data:image/png;base64,' + rf;
+  }
+
+  const plantaoRaw = (raw.plantao || raw.plantão || raw.shift || '').toString().trim();
+  const plantaoLower = plantaoRaw ? plantaoRaw.toLowerCase() : '';
+
+  return {
+    id: raw.id || raw.ID || '',
+    nome: raw.nome || raw.name || '',
+    cargo: raw.cargo || raw.funcao || raw.role || '',
+    telefone: raw.telefone || raw.tel || raw.phone || '',
+    email: raw.email || '',
+    plantao: (raw.plantao || raw.plantão || raw.shift || '') || '',
+    plantaoLower,
+    observacoes: raw.observacoes || raw.obs || '',
+    photoBase64: photo
+  };
+}
+
+/* =========================
+   API (GET/POST wrappers)
+   ========================= */
+async function apiGet(){
+  const res = await fetch(BASE_URL + '?action=list', { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+async function apiPost(payload){
+  const res = await fetch(BASE_URL, { method: 'POST', body: JSON.stringify(payload) });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+async function addPerson(data){ return apiPost({ action:'add', data }); }
+async function editPerson(id,data){ return apiPost({ action:'edit', id, data }); }
+async function deletePerson(id){ return apiPost({ action:'delete', id }); }
+
+/* =========================
+   Renderização tabela / cards
+   ========================= */
+function renderTable(list) {
+  const tbody = $('#table tbody');
+  tbody.innerHTML = '';
+  if (!list || list.length === 0) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 7; td.textContent = 'Nenhum registro';
+    tr.appendChild(td); tbody.appendChild(tr); $('#countInfo').textContent = '0 registros'; return;
+  }
+
+  const start = (currentPage - 1) * pageSize;
+  const pageItems = list.slice(start, start + pageSize);
+  pageItems.forEach(item => {
+    const tr = document.createElement('tr');
+
+    const tdNome = document.createElement('td'); tdNome.textContent = item.nome || ''; tr.appendChild(tdNome);
+    const tdCargo = document.createElement('td'); tdCargo.textContent = item.cargo || ''; tr.appendChild(tdCargo);
+
+    const tdTel = document.createElement('td');
+    if (item.telefone && String(item.telefone).trim()){
+      const href = normalizeTelForHref(item.telefone);
+      if (href){
+        const a = document.createElement('a'); a.className='tel'; a.href='tel:'+href; a.textContent = item.telefone; a.setAttribute('aria-label','Ligar para '+item.telefone);
+        tdTel.appendChild(a);
+      } else tdTel.textContent = item.telefone;
+    } else tdTel.textContent = '';
+    tr.appendChild(tdTel);
+
+    const tdEmail = document.createElement('td'); tdEmail.textContent = item.email || ''; tr.appendChild(tdEmail);
+    const tdPlantao = document.createElement('td'); tdPlantao.textContent = item.plantao || ''; tr.appendChild(tdPlantao);
+
+    const tdFoto = document.createElement('td');
+    if (item.photoBase64) {
+      const img = document.createElement('img'); img.className='thumb'; img.src = item.photoBase64; img.alt = item.nome + ' — foto'; img.loading='lazy';
+      tdFoto.appendChild(img);
+    } else tdFoto.textContent = '—';
+    tr.appendChild(tdFoto);
+
+    const tdAcoes = document.createElement('td');
+    const btnEdit = document.createElement('button'); btnEdit.className='btn ghost editBtn'; btnEdit.type='button'; btnEdit.dataset.id = item.id; btnEdit.textContent = '✏️ Editar';
+    const btnDel = document.createElement('button'); btnDel.className='btn'; btnDel.style.background='var(--danger)'; btnDel.style.color='white'; btnDel.dataset.id = item.id; btnDel.type='button'; btnDel.textContent = '🗑️ Excluir';
+    tdAcoes.appendChild(btnEdit); tdAcoes.appendChild(btnDel);
+    tr.appendChild(tdAcoes);
+
+    tbody.appendChild(tr);
+  });
+
+  $('#countInfo').textContent = `${list.length} registros`;
+  $('#pageNum').textContent = String(currentPage);
+}
+
+function renderCards(list){
+  const wrap = $('#cards');
+  wrap.innerHTML = '';
+  if(!list || list.length===0){ wrap.innerHTML = '<div class="empty">Nenhum registro</div>'; return; }
+
+  const start = (currentPage - 1) * pageSize;
+  const pageItems = list.slice(start, start + pageSize);
+
+  pageItems.forEach(item => {
+    const card = document.createElement('div'); card.className = 'card';
+
+    const photo = document.createElement('div'); photo.style.width='72px'; photo.style.height='72px'; photo.style.borderRadius='10px'; photo.style.overflow='hidden'; photo.style.flex='0 0 auto'; photo.style.background='#f5f7f8';
+    if(item.photoBase64){
+      const img = document.createElement('img'); img.src = item.photoBase64; img.alt = item.nome; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; img.loading='lazy';
+      photo.appendChild(img);
+    } else {
+      const placeholder = document.createElement('div'); placeholder.style.display='grid'; placeholder.style.placeItems='center'; placeholder.style.height='100%'; placeholder.style.fontWeight='700';
+      placeholder.textContent = (item.nome||'').split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
+      photo.appendChild(placeholder);
+    }
+
+    const meta = document.createElement('div'); meta.className='meta';
+    const h = document.createElement('h3'); h.textContent = item.nome || ''; meta.appendChild(h);
+    const p = document.createElement('p'); p.textContent = item.cargo || ''; meta.appendChild(p);
+
+    const actions = document.createElement('div'); actions.className = 'actions';
+    if(item.telefone){
+      const a = document.createElement('a'); a.className='pill'; a.href='tel:'+normalizeTelForHref(item.telefone); a.textContent='📞 '+item.telefone; a.style.marginRight='8px';
+      actions.appendChild(a);
+      const copy = document.createElement('button'); copy.className='btn ghost'; copy.textContent='Copiar'; copy.addEventListener('click', (e)=>{ e.stopPropagation(); navigator.clipboard?.writeText(item.telefone); toast('Telefone copiado'); });
+      actions.appendChild(copy);
+    }
+    meta.appendChild(actions);
+
+    const right = document.createElement('div'); right.style.display='flex'; right.style.flexDirection='column'; right.style.gap='8px'; right.style.alignItems='flex-end';
+    const plant = document.createElement('div'); plant.className='pill'; plant.style.background='#fff'; plant.style.color='var(--primary)'; plant.textContent = item.plantao || ''; right.appendChild(plant);
+
+    const editBtn = document.createElement('button'); editBtn.className='btn ghost'; editBtn.textContent='✏️ Editar'; editBtn.dataset.id=item.id;
+    const delBtn = document.createElement('button'); delBtn.className='btn'; delBtn.textContent='🗑 Excluir'; delBtn.style.background='var(--danger)'; delBtn.style.color='white'; delBtn.dataset.id=item.id;
+    right.appendChild(editBtn); right.appendChild(delBtn);
+
+    card.appendChild(photo); card.appendChild(meta); card.appendChild(right);
+    wrap.appendChild(card);
+  });
+
+  $('#countInfo').textContent = `${list.length} registros`;
+  $('#pageNum').textContent = String(currentPage);
+}
+
+/* =========================
+   Carregar + Normalizar
+   ========================= */
+async function load(){
+  try{
+    const raw = await apiGet();
+    // Suporta array ou {data: [...]}
+    const listRaw = Array.isArray(raw) ? raw : (raw && raw.data ? raw.data : []);
+    RAW = (listRaw || []).map(normalizeItem);
+    // default filtered = all
+    FILTERED = [...RAW];
+    currentPage = 1;
+    render();
+  } catch(e){
+    console.error(e);
+    toast('Erro ao carregar dados', 3000);
+  }
+}
+
+/* =========================
+   Render + paginação + filtros
+   ========================= */
+function applySearchAndFilters(){
+  const q = ($('#q').value || '').trim().toLowerCase();
+  FILTERED = RAW.filter(item => {
+    if(!q) return true;
+    const hay = ((item.nome||'') + ' ' + (item.cargo||'') + ' ' + (item.telefone||'') + ' ' + (item.email||'') + ' ' + (item.plantao||'') + ' ' + (item.observacoes||'')).toLowerCase();
+    return q.split(/\s+/).every(tok => hay.includes(tok));
+  });
+  currentPage = 1;
+}
+
+function render(){
+  pageSize = Number($('#pageSize').value || 12);
+  applySearchAndFilters();
+  // render table or cards depending on viewport (CSS handles display)
+  renderTable(FILTERED);
+  renderCards(FILTERED);
+}
+
+/* =========================
+   Upload foto (preview)
+   ========================= */
+$('#photo').addEventListener('change', async (ev) => {
+  const f = ev.target.files && ev.target.files[0];
+  if(!f){ pendingPhotoBase64 = null; $('#photoPreview').style.display='none'; return; }
+  if(f.size > 4 * 1024 * 1024){ toast('Arquivo muito grande (>4MB)',3000); return; }
+  try{
+    const dataUrl = await fileToDataURL(f);
+    pendingPhotoBase64 = dataUrl;
+    $('#photoImg').src = dataUrl;
+    $('#photoName').textContent = f.name;
+    $('#photoPreview').style.display = 'flex';
+  } catch(e){ toast('Erro ao ler imagem',3000); }
+});
+$('#removePhoto').addEventListener('click', ()=>{ pendingPhotoBase64 = null; $('#photoPreview').style.display='none'; $('#photo').value=''; });
+
+function fileToDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const fr = new FileReader();
+    fr.onload = ()=> resolve(fr.result);
+    fr.onerror = ()=> reject(fr.error);
+    fr.readAsDataURL(file);
+  });
+}
+
+/* =========================
+   CRUD actions (save/clear/edit/delete)
+   ========================= */
+$('#saveBtn').addEventListener('click', async ()=>{
+  const id = $('#editingId').value;
+  const data = {
+    nome: $('#nome').value.trim(),
+    cargo: $('#cargo').value.trim(),
+    telefone: $('#telefone').value.trim(),
+    email: $('#email').value.trim(),
+    plantao: $('#plantao').value.trim(),
+    observacoes: $('#observacoes').value.trim(),
+    photoBase64: pendingPhotoBase64 || ''
+  };
+  if(!data.nome){ toast('Informe o nome',3000); return; }
+  $('#saveBtn').disabled = true;
+  try{
+    const res = id ? await editPerson(id, data) : await addPerson(data);
+    if(res && res.status === 'ok'){ toast('Salvo com sucesso'); $('#form').reset(); pendingPhotoBase64 = null; $('#photoPreview').style.display='none'; await load(); }
+    else { console.error(res); toast('Erro ao salvar',3000); }
+  } catch(e){ console.error(e); toast('Erro ao salvar',3000); }
+  finally{ $('#saveBtn').disabled = false; }
+});
+
+$('#clearBtn').addEventListener('click', ()=>{
+  $('#form').reset(); pendingPhotoBase64 = null; $('#photoPreview').style.display='none'; $('#editingId').value='';
+});
+
+/* editar/excluir via delegação */
+$('#table').addEventListener('click', async (ev)=>{
+  const t = ev.target;
+  if(t.classList.contains('editBtn')){
+    const id = t.dataset.id; const item = FILTERED.find(x=>String(x.id)===String(id));
+    if(!item){ toast('Registro não encontrado',3000); return; }
+    fillFormForEdit(item);
+  }
+  if(t.textContent && t.textContent.includes('🗑')){ // delete button
+    const id = t.dataset.id;
+    const ok = await showConfirm('Deseja excluir este registro?');
+    if(!ok) return;
+    try{
+      const res = await deletePerson(id);
+      if(res && res.status === 'ok'){ toast('Excluído'); await load(); } else { toast('Erro ao excluir',3000); }
+    } catch(e){ console.error(e); toast('Erro ao excluir',3000); }
+  }
+});
+
+/* cards delete/edit delegation */
+$('#cards').addEventListener('click', async (ev)=>{
+  const btn = ev.target.closest('button, .btn');
+  if(!btn) return;
+  const id = btn.dataset.id;
+  if(!id) return;
+  if(btn.textContent && btn.textContent.includes('Editar')) {
+    const item = FILTERED.find(x=>String(x.id)===String(id));
+    if(item) fillFormForEdit(item);
+  }
+  if(btn.textContent && btn.textContent.includes('Excluir')){
+    const ok = await showConfirm('Deseja excluir este registro?');
+    if(!ok) return;
+    try{
+      const res = await deletePerson(id);
+      if(res && res.status === 'ok'){ toast('Excluído'); await load(); } else { toast('Erro ao excluir',3000); }
+    } catch(e){ console.error(e); toast('Erro ao excluir',3000); }
+  }
+});
+
+function fillFormForEdit(item){
+  $('#editingId').value = item.id || '';
+  $('#nome').value = item.nome || '';
+  $('#cargo').value = item.cargo || '';
+  $('#telefone').value = item.telefone || '';
+  $('#email').value = item.email || '';
+  $('#plantao').value = item.plantao || '';
+  $('#observacoes').value = item.observacoes || '';
+  if(item.photoBase64){
+    pendingPhotoBase64 = item.photoBase64;
+    $('#photoImg').src = item.photoBase64;
+    $('#photoName').textContent = '(imagem atual)';
+    $('#photoPreview').style.display = 'flex';
+  } else {
+    $('#photoPreview').style.display = 'none';
+    pendingPhotoBase64 = null;
+  }
+  // scroll to form on mobile
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* =========================
+   Pagination / controls
+   ========================= */
+$('#pageSize').addEventListener('change', ()=> { pageSize = Number($('#pageSize').value); currentPage = 1; render(); });
+$('#nextPage').addEventListener('click', ()=> {
+  const maxPage = Math.ceil((FILTERED.length || 1) / pageSize);
+  if(currentPage < maxPage) { currentPage++; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+});
+$('#prevPage').addEventListener('click', ()=> {
+  if(currentPage > 1) { currentPage--; render(); window.scrollTo({top:0,behavior:'smooth'}); }
+});
+$('#q').addEventListener('input', debounce(()=> { currentPage = 1; render(); }, 220));
+$('#clearQ').addEventListener('click', ()=> { $('#q').value = ''; currentPage = 1; render(); });
+
+$('#refreshBtn').addEventListener('click', ()=> load());
+$('#viewTable').addEventListener('click', ()=> { window.scrollTo({top:0,behavior:'smooth'}); $('#table').style.display = ''; $$('.cards').forEach(c => c.style.display = 'none'); });
+$('#viewCards').addEventListener('click', ()=> { $('#table').style.display = 'none'; $('#cards').style.display = ''; });
+
+/* =========================
+   Small helpers
+   ========================= */
+function normalizeTelForHref(raw){
+  if(!raw) return '';
+  raw = String(raw).trim();
+  const hasPlus = raw.startsWith('+');
+  const digits = raw.replace(/\D+/g,'');
+  if(!digits) return '';
+  return hasPlus ? ('+' + digits) : digits;
+}
+function textNodeOrEmpty(v){ return v==null ? '' : String(v); }
+function debounce(fn, ms=200){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); } }
+
+/* =========================
+   Init load
+   ========================= */
+load();
+
+</script>
+</body>
+</html>
